@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App Hub</title>
+<meta name="description" content="Small tools and apps for clinicians, volunteers and teams.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f766e'/><path d='M30 50h40M50 30v40' stroke='white' stroke-width='12' stroke-linecap='round'/></svg>">
+<style>
+  :root {
+    --bg: #f7f7f5; --card: #ffffff; --ink: #1c1d1f; --muted: #5f6368;
+    --line: #e4e4e0; --accent: #0f766e; --accent-soft: #e6f2f0;
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #141516; --card: #1e1f21; --ink: #eceae6; --muted: #a3a6aa;
+            --line: #2e3033; --accent: #4fb8ac; --accent-soft: #1d3330; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+  header { padding: 56px 0 28px; }
+  .mark { display: inline-flex; align-items: center; gap: 10px; font-weight: 650;
+          color: var(--accent); letter-spacing: .02em; font-size: 14px; text-transform: uppercase; }
+  .mark span { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); display: inline-block; }
+  h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.12; margin: 14px 0 10px; letter-spacing: -.02em; }
+  .lede { color: var(--muted); max-width: 620px; margin: 0; font-size: 18px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 28px 0 18px; }
+  .search { flex: 1 1 240px; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line);
+            background: var(--card); color: var(--ink); font: inherit; }
+  .chip { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px;
+          padding: 7px 14px; font: inherit; font-size: 14px; cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; padding-bottom: 56px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+          padding: 20px; display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit;
+          transition: transform .15s ease, border-color .15s ease; }
+  a.card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .card-top { display: flex; align-items: center; gap: 12px; }
+  .icon { width: 42px; height: 42px; border-radius: 11px; background: var(--accent-soft);
+          display: grid; place-items: center; font-size: 22px; flex: none; }
+  .card h2 { font-size: 17px; margin: 0; line-height: 1.3; }
+  .tag { font-size: 12px; color: var(--muted); }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; flex: 1; }
+  .status { align-self: flex-start; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+            background: var(--accent-soft); color: var(--accent); }
+  .status.soon { background: transparent; border: 1px dashed var(--line); color: var(--muted); }
+  .empty { color: var(--muted); padding: 30px 0; display: none; }
+  footer { border-top: 1px solid var(--line); padding: 22px 0 40px; color: var(--muted); font-size: 14px; }
+  footer p { margin: 4px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark"><span aria-hidden="true"></span><b id="site-name">App Hub</b></div>
+    <h1 id="headline">Small tools that make busy days easier.</h1>
+    <p class="lede" id="lede">Free, simple web apps for clinicians, volunteers and teams. They run in your browser, no sign-up needed.</p>
+  </header>
+
+  <div class="controls" role="search">
+    <input class="search" id="q" type="search" placeholder="Search apps…" aria-label="Search apps">
+    <div id="chips"></div>
+  </div>
+
+  <main class="grid" id="grid" aria-live="polite"></main>
+  <p class="empty" id="empty">No apps match that search.</p>
+
+  <footer>
+    <p id="footer-text">Built by Jack Evans.</p>
+    <p>These tools are provided as-is to support, not replace, professional judgement and local policy. They don't collect or store your data unless an app says otherwise.</p>
+  </footer>
+</div>
+
+<script>
+/* ==========================================================
+   EDIT HERE: site details and your list of apps.
+   To add an app: put its HTML in /apps/<folder>/index.html,
+   then add an entry below. Set status to "live" or "soon".
+   ========================================================== */
+const SITE = {
+  name: "App Hub",
+  headline: "Small tools that make busy days easier.",
+  lede: "Free, simple web apps for clinicians, volunteers and teams. They run in your browser, no sign-up needed.",
+  footer: "Built by Jack Evans."
+};
+
+const APPS = [
+  {
+    title: "Example App",
+    icon: "🧰",
+    category: "Utilities",
+    description: "A starter app showing how each tool lives in its own folder. Replace this with your first real app.",
+    url: "apps/example/",
+    status: "live"
+  },
+  {
+    title: "Your next tool",
+    icon: "🩺",
+    category: "Clinical",
+    description: "Placeholder card. Change the title, icon and description, and set status to \"live\" once it's uploaded.",
+    url: "",
+    status: "soon"
+  },
+  {
+    title: "Volunteer tool",
+    icon: "🤝",
+    category: "Volunteering",
+    description: "Another placeholder, for event, rota or team tools. Delete any cards you don't need.",
+    url: "",
+    status: "soon"
+  }
+];
+/* ========================================================== */
+
+document.title = SITE.name;
+document.getElementById("site-name").textContent = SITE.name;
+document.getElementById("headline").textContent = SITE.headline;
+document.getElementById("lede").textContent = SITE.lede;
+document.getElementById("footer-text").textContent = SITE.footer;
+
+const grid = document.getElementById("grid");
+const empty = document.getElementById("empty");
+const q = document.getElementById("q");
+const chipsEl = document.getElementById("chips");
+let activeCat = "All";
+
+const cats = ["All", ...new Set(APPS.map(a => a.category))];
+cats.forEach(c => {
+  const b = document.createElement("button");
+  b.className = "chip"; b.textContent = c; b.type = "button";
+  b.setAttribute("aria-pressed", c === activeCat);
+  b.addEventListener("click", () => {
+    activeCat = c;
+    chipsEl.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", x.textContent === c));
+    render();
+  });
+  chipsEl.appendChild(b);
+});
+chipsEl.style.display = "flex"; chipsEl.style.gap = "8px"; chipsEl.style.flexWrap = "wrap";
+
+function esc(s) { return String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+
+function render() {
+  const term = q.value.trim().toLowerCase();
+  const list = APPS.filter(a =>
+    (activeCat === "All" || a.category === activeCat) &&
+    (!term || (a.title + " " + a.description + " " + a.category).toLowerCase().includes(term))
+  );
+  grid.innerHTML = list.map(a => {
+    const live = a.status === "live" && a.url;
+    const inner = `
+      <div class="card-top">
+        <div class="icon" aria-hidden="true">${esc(a.icon || "🧩")}</div>
+        <div><h2>${esc(a.title)}</h2><div class="tag">${esc(a.category)}</div></div>
+      </div>
+      <p>${esc(a.description)}</p>
+      <span class="status ${live ? "" : "soon"}">${live ? "Open app →" : "Coming soon"}</span>`;
+    return live ? `<a class="card" href="${esc(a.url)}">${inner}</a>` : `<div class="card">${inner}</div>`;
+  }).join("");
+  empty.style.display = list.length ? "none" : "block";
+}
+q.addEventListener("input", render);
+render();
+</script>
+</body>
+</html>
