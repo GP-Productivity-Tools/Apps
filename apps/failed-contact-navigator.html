@@ -1,0 +1,610 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="Step-by-step support for triage requests that have had no reply through Accurx: risk tier, chase schedule, checks and a ready-made note."><meta name="app:category" content="Clinical"><meta name="app:icon" content="📞"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Failed Contact Navigator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: four numbered steps (a real sequence) in the working column + sticky case summary rail with the live record entry */
+:root{
+  --paper:#f3f6f6; --surface:#ffffff; --ink:#13232a; --muted:#56686f; --line:#d3dddf; --accent:#0a6a76; --accent-soft:#e1f0f1;
+  --red:#b42318; --red-soft:#fdecea; --amber:#a15c07; --amber-soft:#fdf2e1; --green:#1b7343; --green-soft:#e6f4ec;
+  --focus:#0a6a76;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0e171a; --surface:#152126; --ink:#e3ecee; --muted:#93a6ac; --line:#2a3b40; --accent:#53b6c2; --accent-soft:#16343a;
+  --red:#ff8a80; --red-soft:#3a1c1a; --amber:#f2b24c; --amber-soft:#3a2a12; --green:#5fcf8f; --green-soft:#16321f; --focus:#53b6c2; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0e171a; --surface:#152126; --ink:#e3ecee; --muted:#93a6ac; --line:#2a3b40; --accent:#53b6c2; --accent-soft:#16343a;
+  --red:#ff8a80; --red-soft:#3a1c1a; --amber:#f2b24c; --amber-soft:#3a2a12; --green:#5fcf8f; --green-soft:#16321f; --focus:#53b6c2; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{text-wrap:balance;margin:0}
+h1{font-size:1.6rem;line-height:1.2}
+h2{font-size:1.1rem}
+h3{font-size:.95rem}
+.eyebrow{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;margin-bottom:14px}
+.top p{margin:4px 0 0;color:var(--muted);max-width:66ch}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-weight:700;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;cursor:pointer;min-height:40px}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+button.ghost{background:transparent}
+button.small{padding:4px 10px;min-height:32px;font-size:.85rem}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.notice{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 14px;font-size:.88rem;color:var(--muted);margin-bottom:16px}
+.notice strong{color:var(--ink)}
+.example{border-color:var(--amber);background:var(--amber-soft);color:var(--ink)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
+@media (max-width:960px){.grid{grid-template-columns:minmax(0,1fr)}}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.stephead{display:flex;gap:12px;align-items:baseline}
+.num{font-family:var(--f-mono);font-weight:600;color:var(--accent);font-size:.9rem}
+.stephead p{margin:2px 0 0;color:var(--muted);font-size:.88rem}
+.question{border-left:4px solid var(--red);background:var(--red-soft);padding:10px 14px;border-radius:0 8px 8px 0;font-weight:700}
+fieldset{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+legend{font-weight:700;font-size:.9rem;margin-bottom:6px;padding:0}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:.9rem}
+.seg input{accent-color:var(--accent)}
+.seg label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:7px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:.9rem;line-height:1.35}
+.chk input{margin-top:2px;width:17px;height:17px;flex:none;accent-color:var(--accent)}
+.chk:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.chk small{display:block;color:var(--muted);font-size:.8rem}
+.flaggroup{display:flex;flex-direction:column;gap:8px}
+.flaggroup.red .chk:has(input:checked){border-color:var(--red);background:var(--red-soft)}
+.flaggroup.amber .chk:has(input:checked){border-color:var(--amber);background:var(--amber-soft)}
+.escalate:has(input:checked){border-color:var(--red)!important;background:var(--red-soft)!important}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px}
+.tag.red{background:var(--red-soft);color:var(--red)}
+.tag.amber{background:var(--amber-soft);color:var(--amber)}
+.tag.green{background:var(--green-soft);color:var(--green)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:.8rem;font-weight:700;color:var(--muted)}
+select,input[type=datetime-local],input[type=time],input[type=text],input[type=number],textarea{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-height:40px;max-width:100%}
+textarea{width:100%;min-height:72px;resize:vertical}
+input[type=number]{width:84px}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.empty{color:var(--muted);font-size:.88rem;padding:8px 0}
+.callout{border-radius:8px;padding:10px 14px;font-size:.9rem}
+.callout.warn{background:var(--amber-soft);border:1px solid var(--amber)}
+.callout.stop{background:var(--red-soft);border:1px solid var(--red)}
+.actions{display:flex;flex-direction:column;gap:6px}
+.template{border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.template pre{white-space:pre-wrap;margin:0;font-family:var(--f-body);font-size:.9rem;background:var(--paper);padding:10px;border-radius:6px}
+.tplhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+details{border:1px solid var(--line);border-radius:8px;padding:10px 14px;background:var(--surface)}
+summary{cursor:pointer;font-weight:700}
+.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;flex-direction:column;gap:12px}
+@media (max-width:960px){.rail{position:static}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.tier{border-radius:10px;padding:14px 16px;border:2px solid var(--green);background:var(--green-soft)}
+.tier.red{border-color:var(--red);background:var(--red-soft)}
+.tier.amber{border-color:var(--amber);background:var(--amber-soft)}
+.tier .big{font-size:1.3rem;font-weight:700}
+.tier.red .big{color:var(--red)} .tier.amber .big{color:var(--amber)} .tier.green .big{color:var(--green)}
+.tier ul{margin:6px 0 0;padding-left:18px;font-size:.85rem}
+.mode{font-size:.85rem;font-weight:700;margin-top:6px}
+.meter{display:flex;gap:4px}
+.meter span{flex:1;height:8px;border-radius:4px;background:var(--line)}
+.meter span.on{background:var(--accent)}
+.stat{display:flex;justify-content:space-between;gap:10px;font-size:.9rem}
+.stat b{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.due{font-family:var(--f-mono);font-size:1.4rem;font-weight:600;font-variant-numeric:tabular-nums}
+.due.late{color:var(--red)}
+.note{font-family:var(--f-mono);font-size:.76rem;line-height:1.45;white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:340px;overflow:auto;margin:0}
+.refs{font-size:.86rem;display:flex;flex-direction:column;gap:6px;padding-left:18px;margin:8px 0 0}
+.refs a{color:var(--accent)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--surface);padding:8px 16px;border-radius:8px;font-weight:700;font-size:.9rem;z-index:20}
+.muted{color:var(--muted)}
+.sub{font-size:.82rem;color:var(--muted);margin:0}
+@media (prefers-reduced-motion:no-preference){.tier{transition:background .2s,border-color .2s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Clifton Medical Centre · Triage Hub</div>
+      <h1>Failed Contact Navigator</h1>
+      <p>For triage requests where we've replied through Accurx and heard nothing back: no reply, no booking, nothing returned. Most of this is a notes review. You only phone when you're significantly concerned.</p>
+    </div>
+    <div class="btnrow">
+      <button class="primary" id="newCase">Start new case</button>
+      <button class="ghost" id="openSettings">Practice settings</button>
+    </div>
+  </header>
+
+  <div class="notice"><strong>No patient-identifiable information.</strong> Nothing typed here is saved or sent anywhere, and it clears when you start a new case. Use the request reference, not a name or NHS number. This tool supports clinical judgement; it doesn't replace it.</div>
+  <div class="notice example" id="exampleBanner" hidden><strong>Example case loaded</strong> so you can see how it works. Press <em>Start new case</em> for a real one.</div>
+
+  <div class="grid">
+    <main class="col">
+
+      <!-- STEP 1 -->
+      <section class="step" aria-labelledby="s1">
+        <div class="stephead"><span class="num">01</span><div><h2 id="s1">What's gone unanswered</h2><p>The triage outcome you sent, and when.</p></div></div>
+        <div class="row">
+          <div class="field"><label for="ref">Request reference</label><input type="text" id="ref" placeholder="Accurx ref / task ID" autocomplete="off"></div>
+          <div class="field"><label for="clinician">Triaging clinician</label><input type="text" id="clinician" placeholder="[Name, role]" autocomplete="off"></div>
+        </div>
+        <fieldset><legend>What did we send that hasn't been acted on?</legend>
+          <div class="seg" id="trigger">
+            <label><input type="radio" name="trg" value="selfbook"> Self-book link, not booked</label>
+            <label><input type="radio" name="trg" value="info"> Request for more information or photos, no reply</label>
+            <label><input type="radio" name="trg" value="quest"> Questionnaire, not returned</label>
+            <label><input type="radio" name="trg" value="action"> Advice needing a reply (e.g. "let us know if…"), no reply</label>
+            <label><input type="radio" name="trg" value="call"> Called because concerned, no answer</label>
+          </div>
+        </fieldset>
+        <div class="row">
+          <div class="field"><label for="sentAt">Sent at</label><input type="datetime-local" id="sentAt"></div>
+          <fieldset style="flex:1;min-width:240px"><legend>Urgency given at triage</legend>
+            <div class="seg">
+              <label><input type="radio" name="urg" value="urgent"> Same day</label>
+              <label><input type="radio" name="urg" value="soon"> Within 2–3 days</label>
+              <label><input type="radio" name="urg" value="routine"> Routine</label>
+            </div>
+          </fieldset>
+        </div>
+        <fieldset><legend>Who submitted the request?</legend>
+          <div class="seg">
+            <label><input type="radio" name="sub" value="patient"> Patient</label>
+            <label><input type="radio" name="sub" value="proxy"> Relative / carer / care home</label>
+            <label><input type="radio" name="sub" value="reception"> Reception on patient's behalf</label>
+          </div>
+        </fieldset>
+      </section>
+
+      <!-- STEP 2 -->
+      <section class="step" aria-labelledby="s2">
+        <div class="stephead"><span class="num">02</span><div><h2 id="s2">Review the notes: does the silence matter?</h2><p>Re-read the request and the record. The tier decides how long you can wait and whether you need to pick up the phone.</p></div></div>
+        <div class="question">Is the patient potentially vulnerable, alone, or at risk of potentially life-threatening symptoms?</div>
+        <div class="flaggroup red">
+          <div><span class="tag red">Red</span> <span class="muted" style="font-size:.85rem">Any one: don't wait for a reply. Phone now.</span></div>
+          <div class="checks" id="redFlags"></div>
+        </div>
+        <div class="flaggroup amber">
+          <div><span class="tag amber">Amber</span> <span class="muted" style="font-size:.85rem">Vulnerability or higher need: chase sooner, and a clinician decides before closing</span></div>
+          <div class="checks" id="amberFlags"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="override">Clinical judgement: raise the tier</label>
+            <select id="override"><option value="">No change</option><option value="amber">Raise to Amber</option><option value="red">Raise to Red</option></select></div>
+          <div class="field" style="flex:1;min-width:200px"><label for="overrideWhy">Reason (goes in the note)</label><input type="text" id="overrideWhy" placeholder="e.g. tone of request, known history" autocomplete="off"></div>
+        </div>
+        <p class="sub">The tier can be raised, never lowered below what the flags show. If a flag doesn't apply, untick it and say why in the rationale.</p>
+      </section>
+
+      <!-- STEP 3 -->
+      <section class="step" aria-labelledby="s3">
+        <div class="stephead"><span class="num">03</span><div><h2 id="s3">Follow-up contacts</h2><p id="chaseRule"></p></div></div>
+        <label class="chk escalate"><input type="checkbox" id="escalateCall"> <span><b>I'm now phoning because I'm significantly concerned</b><small>Switches this case to the call schedule. Red cases switch automatically.</small></span></label>
+        <div class="row">
+          <div class="field"><label for="aTime">When</label><input type="datetime-local" id="aTime"></div>
+          <div class="field"><label for="aMethod">Method</label>
+            <select id="aMethod">
+              <option value="Accurx SMS reminder">Accurx SMS reminder</option>
+              <option value="Self-book link re-sent">Self-book link re-sent</option>
+              <option value="Questionnaire / photo request re-sent">Questionnaire / photo request re-sent</option>
+              <option value="NHS App message">NHS App message</option>
+              <option value="Email">Email</option>
+              <option value="Phone call">Phone call</option>
+            </select></div>
+          <div class="field"><label for="aNum">Number / contact used</label>
+            <select id="aNum">
+              <option value="Number given on request">Number given on request</option>
+              <option value="Mobile on record">Mobile on record</option>
+              <option value="Landline on record">Landline on record</option>
+              <option value="NOK / carer number">NOK / carer</option>
+              <option value="Care home / care provider">Care home / care provider</option>
+              <option value="Person who submitted the request">Person who submitted request</option>
+            </select></div>
+          <div class="field"><label for="aOut">Outcome</label><select id="aOut"></select></div>
+          <button class="primary" id="addAttempt">Log contact</button>
+        </div>
+        <div class="tablewrap"><table aria-label="Follow-up contacts">
+          <thead><tr><th>#</th><th>When</th><th>Method</th><th>Contact</th><th>Outcome</th><th></th></tr></thead>
+          <tbody id="attemptRows"></tbody>
+        </table></div>
+        <div id="attemptEmpty" class="empty">No follow-up logged yet. The original message from step 1 counts as the first contact.</div>
+        <div id="numberWarn" class="callout warn" hidden><strong>The number may be wrong.</strong> Compare the number on the request with the record and PDS before sending anything else. A message that never arrives looks the same as a patient who's ignoring you.</div>
+        <label class="chk"><input type="checkbox" id="responded"> <span><b>Patient has responded</b> (replied, booked, returned the form or answered). Carry on with the triage as normal; the note records the delay.</span></label>
+      </section>
+
+      <!-- STEP 4 -->
+      <section class="step" aria-labelledby="s4">
+        <div class="stephead"><span class="num">04</span><div><h2 id="s4">Checks, then decide</h2><p id="actionIntro"></p></div></div>
+        <h3>Checks on the record</h3>
+        <p class="sub">The list grows with the tier. Anything unticked shows in the note as not done.</p>
+        <div class="checks" id="checkList"></div>
+        <div id="timeWarn" class="callout stop" hidden></div>
+        <h3 style="margin-top:4px">What to do</h3>
+        <div class="actions" id="actionList"></div>
+        <fieldset><legend>Outcome</legend>
+          <div class="seg">
+            <label><input type="radio" name="out" value="open"> Kept open, next chase planned</label>
+            <label><input type="radio" name="out" value="escalated"> Escalated (call / Duty Doctor / visit / 999)</label>
+            <label><input type="radio" name="out" value="handover"> Handed over to NHS 111</label>
+            <label><input type="radio" name="out" value="closed"> Closed, no response (safety-netted)</label>
+          </div>
+        </fieldset>
+        <div id="closeBlock" class="callout stop" hidden></div>
+        <div class="field"><label for="followUp">Follow-up plan: who and when</label><input type="text" id="followUp" placeholder="e.g. re-check inbox 14:00; Duty Doctor to decide by 16:00" autocomplete="off"></div>
+        <div class="field"><label for="rationale">Clinical rationale</label><textarea id="rationale" placeholder="Why this response is proportionate, based on the request, the record and the checks above."></textarea></div>
+
+        <h3 style="margin-top:6px">Messages</h3>
+        <div class="template"><div class="tplhead"><b>Reminder SMS</b><button class="small" data-copy="tplRemind">Copy</button></div><pre id="tplRemind"></pre></div>
+        <div class="template"><div class="tplhead"><b>Closing SMS (no response, closing the request)</b><button class="small" data-copy="tplClose">Copy</button></div><pre id="tplClose"></pre>
+          <span class="sub">Send this before you close a Green request, so the patient knows the request is closed and how to come back.</span></div>
+        <div class="template"><div class="tplhead"><b>Voicemail (if you phone)</b><button class="small" data-copy="tplVm">Copy</button></div><pre id="tplVm"></pre>
+          <span class="sub">Minimal details. Don't name the patient unless the greeting confirms it's their phone, and never leave clinical information.</span></div>
+        <div class="template"><div class="tplhead"><b>Letter (still no response, clinical need remains)</b><button class="small" data-copy="tplLetter">Copy</button></div><pre id="tplLetter"></pre>
+          <span class="sub">Be specific about why it matters. A generic "please book" letter is weaker evidence that the risk was explained.</span></div>
+      </section>
+
+      <details>
+        <summary>Where the steps come from</summary>
+        <ol class="refs">
+          <li>DHU Health Care. <em>Clinical call-back process and failed contact attempt check-list</em>, F3700-34, Issue 1, Nov 2021 (supplied locally). The vulnerability question, the call schedule for when we do phone, record and number checks, safe and well check.</li>
+          <li>MDDUS. <a href="https://mddus.com/resources/publications/publications-library/insight-primary/q3-2023/safe-telephone-triage" target="_blank" rel="noopener">Safe telephone triage</a>, Insight Primary, Sept 2023. Practices need a failed contact policy; patients need a clear timeframe for hearing back; contact details should be checked.</li>
+          <li>MDDUS. <a href="https://www.mddus.com/resources/publications-library/practice-manager/issue-19-autumn-2018/review-now-due" target="_blank" rel="noopener">Review now due</a>, Practice Manager, 2018. Clinicians state the urgency and timeline for follow-up; specific letters over generic ones; record alerts; avoid "three letters and then nothing".</li>
+          <li>Urgent Care 24. <a href="https://primarycare24.org.uk/wp-content/uploads/private/OP014%20Failure%20to%20Contact%20Patients.pdf" target="_blank" rel="noopener">SOP OP014 Failure to Contact Patients</a>, v9, 2018. Attempts timed by priority, then a risk-assessed decision to stand down or visit.</li>
+          <li>Regulation 28 reports: <a href="https://www.judiciary.uk/wp-content/uploads/2021/01/Patricia-Douglas-2020-0286_Redacted-1.pdf" target="_blank" rel="noopener">Patricia Douglas (2020-0286)</a>, number incompletely recorded; <a href="https://www.judiciary.uk/wp-content/uploads/2023/10/Ronald-Harris-Prevention-of-future-deaths-report-2023-0371_Published.pdf" target="_blank" rel="noopener">Ronald Harris (2023-0371)</a>, triage documentation incomplete and promised contact not made; <a href="https://www.judiciary.uk/prevention-of-future-death-reports/michael-huggon-prevention-of-future-deaths-report/" target="_blank" rel="noopener">Michael Huggon (2024-0375)</a>, no handover to out-of-hours.</li>
+          <li>HSSIB. <a href="https://hssib.org.uk/patient-safety-investigations/workforce-and-patient-safety/second-investigation-report/" target="_blank" rel="noopener">Digital tools for online consultation in general practice</a>, July 2024. Some patients can't use online routes; harm from online consultation is under-reported.</li>
+          <li>NHS England. <a href="https://www.england.nhs.uk/long-read/online-consultations-frequently-asked-questions/" target="_blank" rel="noopener">Online consultations: FAQs</a>. An appropriate response on the day of submission in core hours.</li>
+          <li>BNSSG ICB. <a href="https://remedy.bnssg.icb.nhs.uk/media/v4tbugcl/bnssg-childrens-wnb-policy-v3-jan25.pdf" target="_blank" rel="noopener">Was Not Brought guidance (children)</a> and <a href="https://remedy.bnssg.icb.nhs.uk/media/4kyfchwq/bnssg-vulnerable-adult-wnb-policy-v3-jan25.pdf" target="_blank" rel="noopener">(adults at risk)</a>, Jan 2025. Includes lack of response to practice communications. Example ICB guidance; use your own ICB's version.</li>
+          <li>Home Office / DHSC / NHS England. <a href="https://www.gov.uk/government/publications/national-partnership-agreement-right-care-right-person" target="_blank" rel="noopener">National Partnership Agreement: Right Care, Right Person</a>, 2023. Welfare checks for health concerns sit with health services.</li>
+        </ol>
+      </details>
+    </main>
+
+    <aside class="rail" aria-label="Case summary">
+      <div class="tier" id="tierCard">
+        <div class="eyebrow">Risk tier</div>
+        <div class="big" id="tierName">Green</div>
+        <ul id="tierWhy"></ul>
+        <div class="mode" id="modeLine"></div>
+      </div>
+      <div class="card">
+        <div class="stat"><span id="countLabel">Chases</span><b id="attCount">0 of 2</b></div>
+        <div class="meter" id="meter"></div>
+        <div class="eyebrow" style="margin-top:4px" id="dueLabel">Next chase due</div>
+        <div class="due" id="dueTime">–</div>
+        <p class="sub" id="dueSub"></p>
+      </div>
+      <div class="card">
+        <div class="tplhead"><h3>Record entry</h3><button class="small primary" data-copy="noteOut">Copy note</button></div>
+        <pre class="note" id="noteOut"></pre>
+        <span class="sub">Paste as a free-text entry and add your practice's agreed code.</span>
+      </div>
+    </aside>
+  </div>
+
+  <details id="settings" style="margin-top:20px">
+    <summary>Practice settings</summary>
+    <p class="muted" style="font-size:.88rem">Starting defaults only. Agree the final numbers with the Partners and put them in the Triage Hub SOP. Settings are kept in this browser only.</p>
+    <h3 style="margin:10px 0 4px">Message chases (no phone call)</h3>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Tier</th><th>Chases before deciding</th><th>Hours to wait before each chase</th></tr></thead>
+      <tbody>
+        <tr><td><span class="tag amber">Amber</span></td><td><input type="number" id="mAmbN" min="1" max="6"></td><td><input type="number" id="mAmbG" min="0.5" max="72" step="0.5"></td></tr>
+        <tr><td><span class="tag green">Green</span></td><td><input type="number" id="mGrnN" min="1" max="6"></td><td><input type="number" id="mGrnG" min="0.5" max="120" step="0.5"></td></tr>
+      </tbody></table></div>
+    <h3 style="margin:14px 0 4px">Phone calls (when concerned)</h3>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Tier</th><th>Minimum call attempts</th><th>Minutes between calls</th></tr></thead>
+      <tbody>
+        <tr><td><span class="tag red">Red</span></td><td><input type="number" id="cRedN" min="1" max="6"></td><td><input type="number" id="cRedG" min="5" max="240"></td></tr>
+        <tr><td><span class="tag amber">Amber / Green</span></td><td><input type="number" id="cAmbN" min="1" max="6"></td><td><input type="number" id="cAmbG" min="5" max="240"></td></tr>
+      </tbody></table></div>
+    <div class="row" style="margin-top:10px">
+      <div class="field"><label for="cPhone">Practice phone number</label><input type="text" id="cPhone" autocomplete="off"></div>
+      <div class="field"><label for="cClose">End of core hours</label><input type="time" id="cClose"></div>
+      <button id="resetSettings">Restore defaults</button>
+    </div>
+  </details>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+const PRACTICE='Clifton Medical Centre';
+const DEFAULTS={msg:{amber:{n:2,h:3},green:{n:2,h:24}},call:{red:{n:3,gap:15},other:{n:3,gap:30}},phone:'[practice phone number]',close:'18:30'};
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const clone=o=>JSON.parse(JSON.stringify(o));
+let cfg=clone(DEFAULTS);
+(function(){const s=store.get('fcn-cfg2');if(s&&s.msg&&s.call)cfg=Object.assign(cfg,s)})();
+
+const RED=[
+ ['lifethreat','Potentially life-threatening symptoms in the request','chest pain, breathlessness, stroke signs, sepsis signs, heavy bleeding, anaphylaxis'],
+ ['mhcrisis','Mental health crisis, or thoughts of self-harm or suicide mentioned',''],
+ ['welfare','Family, carer or another professional worried about their immediate safety',''],
+ ['infant','Infant under 1 with acute symptoms',''],
+ ['deteriorating','Request describes rapid deterioration','"getting worse by the hour", new confusion, not eating or drinking']
+];
+const AMBER=[
+ ['child','Child or young person under 18',''],
+ ['careneeds','Adult with care and support needs','learning disability, dementia, frailty, housebound'],
+ ['alone','Lives alone',''],
+ ['safeguard','Safeguarding alert or concern on the record (patient or household)',''],
+ ['discharge','Recent hospital discharge',''],
+ ['pregnant','Pregnant or up to 6 weeks postnatal',''],
+ ['digital','May struggle with online or text contact','no smartphone, visual or hearing impairment, limited English or literacy'],
+ ['pattern','Previous non-response or Was Not Brought pattern',''],
+ ['result','Abnormal result or time-critical follow-up behind the request',''],
+ ['proxyconcern','Submitted by a third party who is also not responding','']
+];
+const CHECKS=[
+ {id:'reread',t:'all',l:'Re-read the request and any images for red flags missed first time'},
+ {id:'status',t:'all',l:'Checked the message status in Accurx',s:'Delivered or failed; link used or expired'},
+ {id:'number',t:'all',l:'Compared the number on the request with the record and PDS (Spine demographics)'},
+ {id:'recontact',t:'all',l:'Checked whether the patient has re-submitted, phoned, walked in or booked another way'},
+ {id:'history',t:'all',l:'Reviewed recent consultations and the reason behind the request'},
+ {id:'ed',t:'amber',l:'Checked for recent NHS 111 / ED / ambulance contact',s:'Incoming correspondence, GP Connect, Summary Care Record, local shared record'},
+ {id:'altroute',t:'amber',l:'Tried a different route',s:'Another number, NHS App, email, or the person who submitted'},
+ {id:'nok',t:'amber',l:'Considered contacting next of kin, carer or care provider',s:'Share the minimum needed'},
+ {id:'sgcheck',t:'amber',l:'Checked safeguarding alerts for the patient and household'},
+ {id:'others',t:'amber',l:'Considered other professionals involved',s:'District nurses, health visitor, school nurse, social worker, mental health team'},
+ {id:'duty',t:'red',l:'Discussed with the Duty Doctor'},
+ {id:'address',t:'red',l:'Confirmed the current address and whether they are likely to be there'}
+];
+const ACTIONS={
+ red:[
+  'Don\'t wait for a reply. Phone now, on every number you have, and discuss with the Duty Doctor at the same time.',
+  'No answer: arrange a safe and well check, either a home visit by a practice clinician or the visiting service, in a timeframe that matches the risk.',
+  'Confirmed medical emergency and you know where they are: call 999 for an ambulance and give the address, symptoms and why you can\'t reach them.',
+  'Real and immediate risk to life or serious harm, and health services can\'t reach them in time: police via 999 (Right Care, Right Person threshold).',
+  'Mental health crisis: also involve the local crisis team.',
+  'Tell the practice safeguarding lead if there is any safeguarding element.',
+  'Never close it. If it is still open near the end of core hours, hand over to NHS 111 directly with the full picture.',
+  'If harm resulted or the process failed, record it as a patient safety event (LFPSE).'
+ ],
+ amber:[
+  'Chase sooner than routine: a reminder SMS, the link re-sent, or a different route if the first message may not have arrived.',
+  'Check the record for anything that explains the silence: an ED attendance, an admission, a re-submission.',
+  'Child: apply the Was Not Brought approach. Check household safeguarding and consider the health visitor or school nurse.',
+  'Adult at risk: consider self-neglect or a safeguarding concern, and talk to the safeguarding lead.',
+  'Still no response after the chases: a clinician decides. Either phone (tick "I\'m now phoning" in step 3) or record why it is safe to wait or close.',
+  'Keep the request open with a named owner and a time for the next look.',
+  'Clinical need remains but still no response: send a specific letter and add a record alert.',
+  'Near the end of core hours and still a concern: hand over to NHS 111.'
+ ],
+ green:[
+  'Send a reminder SMS (or re-send the link) once the wait time has passed.',
+  'Check the message actually arrived before assuming the patient isn\'t interested.',
+  'After the agreed chases, send the closing SMS and close with your rationale recorded.',
+  'Time-critical result or follow-up behind it: add a record alert or send a specific letter before closing.',
+  'If anything in the record changes the picture, raise the tier.'
+ ]
+};
+const MSG_OUT=['Delivered – no reply yet','Not booked / link not used','Link expired','Delivery failed','Reply received'];
+const CALL_OUT=['No answer – voicemail left','No answer – no voicemail available','Engaged','Number unobtainable / not recognised','Answered – wrong person','Answered – patient reached'];
+
+let S;
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+function localISO(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function parse(s){return s?new Date(s):null}
+function fmt(d){if(!d)return '–';const now=new Date();const same=d.toDateString()===now.toDateString();
+  const t=`${pad(d.getHours())}:${pad(d.getMinutes())}`;if(same)return t;
+  const tm=new Date(now);tm.setDate(now.getDate()+1);if(d.toDateString()===tm.toDateString())return 'Tomorrow '+t;
+  const ys=new Date(now);ys.setDate(now.getDate()-1);if(d.toDateString()===ys.toDateString())return 'Yesterday '+t;
+  return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' '+t}
+function dur(min){min=Math.round(Math.abs(min));if(min<60)return min+' min';const h=Math.floor(min/60),m=min%60;if(h<24)return h+' h'+(m?' '+m+' min':'');const d=Math.floor(h/24);return d+' day'+(d>1?'s':'')+(h%24?' '+(h%24)+' h':'')}
+function isCall(m){return m==='Phone call'}
+
+function blank(){return {ref:'',clinician:'',trg:'',sentAt:'',urg:'',sub:'',flags:[],override:'',overrideWhy:'',esc:false,log:[],responded:false,checks:[],out:'',followUp:'',rationale:''}}
+function example(){
+  const n=Date.now(),ago=m=>localISO(new Date(n-m*60000));
+  return Object.assign(blank(),{ref:'EXAMPLE-0001',clinician:'[Name, role]',trg:'selfbook',sentAt:ago(200),urg:'urgent',sub:'proxy',flags:['careneeds'],
+    log:[{t:ago(15),m:'Accurx SMS reminder',c:'Number given on request',o:'Delivered – no reply yet'}],checks:['reread','status'],rationale:'Example only.'});
+}
+
+function tierInfo(){
+  const why=[];let tier='green';
+  const reds=RED.filter(r=>S.flags.includes(r[0])),ambers=AMBER.filter(a=>S.flags.includes(a[0]));
+  if(reds.length){tier='red';reds.forEach(r=>why.push(r[1]))}
+  if(ambers.length){if(tier!=='red')tier='amber';ambers.forEach(a=>why.push(a[1]))}
+  if(S.urg==='urgent'&&tier==='green'){tier='amber';why.push('Same-day urgency at triage')}
+  if(S.trg==='call'&&tier==='green'){tier='amber';why.push('Clinician was concerned enough to phone')}
+  const rank={green:0,amber:1,red:2};
+  if(S.override&&rank[S.override]>rank[tier]){tier=S.override;why.push('Raised on clinical judgement'+(S.overrideWhy?': '+S.overrideWhy:''))}
+  if(!why.length)why.push('No vulnerability or high-risk factors identified');
+  const mode=(tier==='red'||S.trg==='call'||S.esc)?'call':'msg';
+  return {tier,why,mode};
+}
+
+function schedule(ti){
+  if(ti.mode==='call'){const c=ti.tier==='red'?cfg.call.red:cfg.call.other;return {kind:'call',n:c.n,gapMin:c.gap}}
+  const m=cfg.msg[ti.tier==='green'?'green':'amber'];return {kind:'msg',n:m.n,gapMin:m.h*60};
+}
+
+function buildFlags(){
+  const mk=(list,host)=>{host.innerHTML='';list.forEach(([id,l,s])=>{const lab=document.createElement('label');lab.className='chk';
+    lab.innerHTML=`<input type="checkbox" value="${id}"><span>${l}${s?`<small>${s}</small>`:''}</span>`;host.appendChild(lab)})};
+  mk(RED,$('redFlags'));mk(AMBER,$('amberFlags'));
+  document.querySelectorAll('#redFlags input,#amberFlags input').forEach(i=>i.addEventListener('change',()=>{
+    S.flags=[...document.querySelectorAll('#redFlags input:checked,#amberFlags input:checked')].map(x=>x.value);render()}));
+}
+function fillOutcomes(){const call=isCall($('aMethod').value);$('aOut').innerHTML=(call?CALL_OUT:MSG_OUT).map(o=>`<option>${o}</option>`).join('');
+  $('aNum').disabled=false}
+
+function syncInputs(){
+  $('ref').value=S.ref;$('clinician').value=S.clinician;$('sentAt').value=S.sentAt;$('override').value=S.override;$('overrideWhy').value=S.overrideWhy;
+  ['trg','urg','sub','out'].forEach(n=>document.querySelectorAll(`input[name=${n}]`).forEach(i=>i.checked=i.value===S[n]));
+  document.querySelectorAll('#redFlags input,#amberFlags input').forEach(i=>i.checked=S.flags.includes(i.value));
+  $('escalateCall').checked=S.esc;$('responded').checked=S.responded;$('followUp').value=S.followUp;$('rationale').value=S.rationale;
+  $('aTime').value=localISO(new Date());
+}
+
+const lvl={all:0,amber:1,red:2},rankOf={green:0,amber:1,red:2};
+function activeChecks(tier){return CHECKS.filter(c=>lvl[c.t]<=rankOf[tier])}
+function renderChecks(tier){
+  const host=$('checkList');host.innerHTML='';
+  activeChecks(tier).forEach(c=>{const lab=document.createElement('label');lab.className='chk';
+    const badge=c.t==='all'?'':` <span class="tag ${c.t}">${c.t}</span>`;
+    lab.innerHTML=`<input type="checkbox" value="${c.id}" ${S.checks.includes(c.id)?'checked':''}><span>${c.l}${badge}${c.s?`<small>${c.s}</small>`:''}</span>`;
+    lab.querySelector('input').addEventListener('change',e=>{if(e.target.checked){if(!S.checks.includes(c.id))S.checks.push(c.id)}else S.checks=S.checks.filter(x=>x!==c.id);render(true)});
+    host.appendChild(lab)});
+}
+function renderLog(){
+  const tb=$('attemptRows');tb.innerHTML='';
+  S.log.forEach((a,i)=>{const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="mono">${i+1}</td><td class="mono">${fmt(parse(a.t))}</td><td>${a.m}</td><td>${a.c}</td><td>${a.o}</td><td><button class="small ghost" aria-label="Remove entry ${i+1}">Remove</button></td>`;
+    tr.querySelector('button').addEventListener('click',()=>{S.log.splice(i,1);render(true)});tb.appendChild(tr)});
+  $('attemptEmpty').hidden=S.log.length>0;
+  const bad=S.log.some(a=>/failed|unobtainable|wrong person/i.test(a.o));
+  $('numberWarn').hidden=!(bad&&!S.checks.includes('number'));
+}
+
+function dueInfo(ti,sc){
+  if(S.responded)return {label:'Status',time:'Responded',sub:'Carry on with the triage as normal.',late:false,count:0};
+  const items=sc.kind==='call'?S.log.filter(a=>isCall(a.m)):S.log.filter(a=>!isCall(a.m));
+  const count=items.length;
+  if(sc.kind==='call'){
+    if(!count)return {label:'First call',time:'Now',sub:ti.tier==='red'?'Red: phone now and tell the Duty Doctor.':'Phoning because concerned.',late:false,count};
+    if(count>=sc.n)return {label:'Minimum calls',time:'Reached',sub:'Escalate as in step 4: safe and well check, Duty Doctor decision. Don\'t simply close.',late:false,count};
+    const due=new Date(parse(items[count-1].t).getTime()+sc.gapMin*60000);const left=(due-Date.now())/60000;
+    return {label:`Call ${count+1} due by`,time:fmt(due),sub:left>=0?`in ${dur(left)}`:`${dur(left)} overdue`,late:left<0,count};
+  }
+  const base=count?parse(items[count-1].t):parse(S.sentAt);
+  if(!base)return {label:'Next chase due',time:'–',sub:'Add the time the original message was sent (step 1).',late:false,count};
+  const due=new Date(base.getTime()+sc.gapMin*60000);const left=(due-Date.now())/60000;
+  if(count>=sc.n){
+    return left>0?{label:'Decision due',time:fmt(due),sub:`All ${sc.n} chases sent. Give the last one until ${fmt(due)}, then decide.`,late:false,count}
+                 :{label:'Decision due',time:'Now',sub:ti.tier==='green'?'Send the closing SMS and close with rationale, or keep open.':'A clinician decides: phone, or record why it is safe to wait or close.',late:true,count};
+  }
+  return {label:`Chase ${count+1} due`,time:left<=0?'Now':fmt(due),sub:left>0?`in ${dur(left)} (${dur(sc.gapMin)} after ${count?'the last chase':'the original message'})`:`due since ${fmt(due)}`,late:left<=0,count};
+}
+
+function templates(){
+  const ph=cfg.phone;
+  $('tplRemind').textContent=`${PRACTICE}: we sent you a message about your recent request but haven't heard back. Please [book using the link / reply to this message / complete the form] by [time/day] so we can help. If you'd rather speak to us, call ${ph}. If you feel worse, call NHS 111, or 999 in an emergency.`;
+  $('tplClose').textContent=`${PRACTICE}: we haven't heard back about your recent request, so we have closed it for now. If you still need help, please send a new request or call ${ph}. If you feel worse, call NHS 111, or 999 in an emergency.`;
+  $('tplVm').textContent=`Hello, this is [your first name] calling from ${PRACTICE} about a request made to the practice. I'll try you again shortly. You can also call us on ${ph}. If you feel worse or need help urgently, call NHS 111, or 999 in an emergency.`;
+  $('tplLetter').textContent=`Dear [Patient],
+
+You recently contacted ${PRACTICE} about [brief, non-sensitive description]. We replied on [date] and followed up on [dates] but have not heard back from you.
+
+We would like to hear from you because [specific clinical reason, e.g. we need to review a test result with you]. Please contact us on ${ph} as soon as you can, or reply through the NHS App.
+
+If your symptoms get worse, please call NHS 111, or 999 in an emergency.
+
+Yours sincerely,
+[Name, role]
+${PRACTICE}`;
+}
+
+function buildNote(ti,sc){
+  const trgTxt={selfbook:'self-book link sent, not booked',info:'request for more information/photos sent, no reply',quest:'questionnaire sent, not returned',action:'advice requiring a reply sent, no reply',call:'clinician phoned due to concern, no answer'}[S.trg]||'[not recorded]';
+  const urgTxt={urgent:'same day',soon:'within 2–3 days',routine:'routine'}[S.urg]||'[not recorded]';
+  const subTxt={patient:'patient',proxy:'relative / carer / care home',reception:'reception on patient\'s behalf'}[S.sub]||'[not recorded]';
+  const L=[];
+  L.push(`NO RESPONSE TO TRIAGE OUTCOME${S.ref?' – '+S.ref:''}`);
+  L.push(`Outstanding: ${trgTxt}${S.sentAt?' ('+fmt(parse(S.sentAt))+')':''}.`);
+  L.push(`Urgency at triage: ${urgTxt}. Submitted by: ${subTxt}.`);
+  L.push(`Risk tier on notes review: ${ti.tier.toUpperCase()} – ${ti.why.join('; ')}.`);
+  if(ti.mode==='call'&&S.trg!=='call')L.push(ti.tier==='red'?'Phoned rather than waiting for a reply because of red flags.':'Escalated to phone call due to clinical concern.');
+  L.push('');
+  L.push('Follow-up contacts:');
+  if(!S.log.length)L.push('  None yet.');
+  S.log.forEach((a,i)=>L.push(`  ${i+1}. ${fmt(parse(a.t))} – ${a.m} – ${a.c} – ${a.o}${/voicemail left/.test(a.o)?' (minimal details, no clinical information)':''}`));
+  if(S.responded)L.push('  Patient has since responded – triage continued.');
+  L.push('');
+  const ac=activeChecks(ti.tier),done=ac.filter(c=>S.checks.includes(c.id)),nd=ac.filter(c=>!S.checks.includes(c.id));
+  L.push('Checks completed:');L.push(done.length?done.map(c=>'  - '+c.l).join('\n'):'  None recorded.');
+  if(nd.length&&!S.responded){L.push('Not completed:');L.push(nd.map(c=>'  - '+c.l).join('\n'))}
+  L.push('');
+  if(S.rationale.trim()){L.push('Clinical rationale:');L.push('  '+S.rationale.trim().replace(/\n/g,'\n  '))}
+  const o={open:'Kept open – next chase planned',escalated:'Escalated (call / Duty Doctor / visit / 999)',handover:'Handed over to NHS 111',closed:'Closed – no response; closing SMS with safety-netting sent'}[S.out];
+  if(o)L.push(`Outcome: ${o}.`);
+  if(S.followUp.trim())L.push(`Follow-up: ${S.followUp.trim()}`);
+  L.push('');
+  L.push(`Recorded by: ${S.clinician||'[Name, role]'}, ${fmt(new Date())}`);
+  return L.join('\n');
+}
+
+function render(skipChecks){
+  const ti=tierInfo(),tier=ti.tier,sc=schedule(ti);
+  $('tierCard').className='tier '+tier;
+  $('tierName').textContent=tier==='red'?'Red: high risk':tier==='amber'?'Amber: vulnerable / higher need':'Green: standard';
+  $('tierWhy').innerHTML=ti.why.map(w=>`<li>${w}</li>`).join('');
+  $('modeLine').textContent=sc.kind==='call'?`Phone: ${sc.n} attempts, ${sc.gapMin} min apart`:`Message chases: ${sc.n}, ${dur(sc.gapMin)} apart`;
+  $('chaseRule').textContent=sc.kind==='call'
+    ?`Phoning: at least ${sc.n} attempts about ${sc.gapMin} minutes apart, using every number you have.${tier==='red'?' Escalate at the same time; don\'t wait for the last call.':''}`
+    :`${tier==='amber'?'Amber':'Green'}: chase by message up to ${sc.n} times, waiting about ${dur(sc.gapMin)} each time. No call unless you become significantly concerned.`;
+  const d=dueInfo(ti,sc);
+  $('countLabel').textContent=sc.kind==='call'?'Call attempts':'Message chases';
+  $('attCount').textContent=`${d.count} of ${sc.n}`;
+  $('meter').innerHTML=Array.from({length:Math.max(sc.n,d.count)},(_,i)=>`<span class="${i<d.count?'on':''}"></span>`).join('');
+  $('dueLabel').textContent=d.label;$('dueTime').textContent=d.time;$('dueTime').className='due'+(d.late?' late':'');$('dueSub').textContent=d.sub;
+  renderLog();
+  if(!skipChecks)renderChecks(tier);
+  $('numberWarn').hidden=!(S.log.some(a=>/failed|unobtainable|wrong person/i.test(a.o))&&!S.checks.includes('number'));
+  $('actionIntro').textContent=tier==='red'?'High risk: phone now and escalate in parallel.':tier==='amber'?'Vulnerable or higher need: don\'t close on silence alone. A clinician makes the call.':'Standard: chase, then close with a closing SMS and rationale.';
+  $('actionList').innerHTML=ACTIONS[tier].map(a=>`<div class="chk" style="cursor:default"><span class="tag ${tier}" style="flex:none">${tier}</span><span>${a}</span></div>`).join('');
+  const [ch,cm]=cfg.close.split(':').map(Number);const close=new Date();close.setHours(ch,cm,0,0);const left=(close-Date.now())/60000;
+  const tw=$('timeWarn');
+  if(tier!=='green'&&!S.responded&&S.out!=='closed'&&left<=60&&left>-720){tw.hidden=false;tw.innerHTML=left>0?`<strong>${dur(left)} until the end of core hours (${cfg.close}).</strong> If this is still a concern, hand over to NHS 111 directly. Don't leave it in the inbox overnight.`:`<strong>Past the end of core hours.</strong> If this is still a concern, hand over to NHS 111 directly.`}else tw.hidden=true;
+  const cb=$('closeBlock'),msgs=[];
+  if(S.out==='closed'){
+    if(tier==='red')msgs.push('A Red request shouldn\'t be closed on no response. Escalate instead.');
+    if(tier==='amber')msgs.push('Amber: record the clinician\'s decision and reasoning in the rationale before closing.');
+    if(sc.kind==='msg'&&d.count<sc.n)msgs.push(`Only ${d.count} of ${sc.n} chases logged.`);
+    if(sc.kind==='call'&&d.count<sc.n)msgs.push(`Only ${d.count} of ${sc.n} call attempts logged.`);
+    if(!S.checks.includes('status'))msgs.push('Message delivery not checked.');
+    if(!S.rationale.trim())msgs.push('Add a clinical rationale before closing.');
+  }
+  cb.hidden=!msgs.length;cb.innerHTML=msgs.map(m=>`<div>${m}</div>`).join('');
+  $('noteOut').textContent=buildNote(ti,sc);
+}
+
+function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,1800)}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-copy]');if(!b)return;const el=$(b.dataset.copy);
+  const fb=()=>{const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Selected. Press Ctrl+C to copy')};
+  try{navigator.clipboard.writeText(el.textContent).then(()=>toast('Copied'),fb)}catch(err){fb()}});
+
+function bind(){
+  [['ref','ref'],['clinician','clinician'],['overrideWhy','overrideWhy'],['followUp','followUp'],['rationale','rationale']].forEach(([id,k])=>$(id).addEventListener('input',e=>{S[k]=e.target.value;render(true)}));
+  $('sentAt').addEventListener('change',e=>{S.sentAt=e.target.value;render(true)});
+  $('override').addEventListener('change',e=>{S.override=e.target.value;render()});
+  ['trg','urg','sub'].forEach(n=>document.querySelectorAll(`input[name=${n}]`).forEach(i=>i.addEventListener('change',()=>{S[n]=i.value;render()})));
+  document.querySelectorAll('input[name=out]').forEach(i=>i.addEventListener('change',()=>{S.out=i.value;render(true)}));
+  $('escalateCall').addEventListener('change',e=>{S.esc=e.target.checked;if(S.esc){$('aMethod').value='Phone call';fillOutcomes()}render(true)});
+  $('responded').addEventListener('change',e=>{S.responded=e.target.checked;render(true)});
+  $('aMethod').addEventListener('change',fillOutcomes);
+  $('addAttempt').addEventListener('click',()=>{
+    const t=$('aTime').value||localISO(new Date());
+    S.log.push({t,m:$('aMethod').value,c:$('aNum').value,o:$('aOut').value});
+    S.log.sort((a,b)=>parse(a.t)-parse(b.t));
+    if(/Reply received|patient reached/.test($('aOut').value)){S.responded=true;$('responded').checked=true}
+    $('aTime').value=localISO(new Date());render(true);toast('Contact logged')});
+  $('newCase').addEventListener('click',()=>{S=blank();$('exampleBanner').hidden=true;store.set('fcn-seen',true);syncInputs();render();window.scrollTo({top:0});toast('New case started')});
+  $('openSettings').addEventListener('click',()=>{const s=$('settings');s.open=true;s.scrollIntoView({behavior:'smooth'})});
+  const map=[['mAmbN',c=>c.msg.amber,'n'],['mAmbG',c=>c.msg.amber,'h'],['mGrnN',c=>c.msg.green,'n'],['mGrnG',c=>c.msg.green,'h'],['cRedN',c=>c.call.red,'n'],['cRedG',c=>c.call.red,'gap'],['cAmbN',c=>c.call.other,'n'],['cAmbG',c=>c.call.other,'gap']];
+  const fill=()=>{map.forEach(([id,f,k])=>$(id).value=f(cfg)[k]);$('cPhone').value=cfg.phone;$('cClose').value=cfg.close};
+  fill();
+  map.forEach(([id,f,k])=>$(id).addEventListener('change',e=>{const v=parseFloat(e.target.value);if(v>0){f(cfg)[k]=v;store.set('fcn-cfg2',cfg);render(true)}}));
+  $('cPhone').addEventListener('input',e=>{cfg.phone=e.target.value||DEFAULTS.phone;store.set('fcn-cfg2',cfg);templates()});
+  $('cClose').addEventListener('change',e=>{cfg.close=e.target.value||DEFAULTS.close;store.set('fcn-cfg2',cfg);render(true)});
+  $('resetSettings').addEventListener('click',()=>{cfg=clone(DEFAULTS);store.set('fcn-cfg2',cfg);fill();templates();render(true);toast('Defaults restored')});
+}
+
+buildFlags();fillOutcomes();
+if(store.get('fcn-seen')){S=blank()}else{S=example();$('exampleBanner').hidden=false}
+syncInputs();bind();templates();render();
+setInterval(()=>render(true),20000);
+})();
+</script>
+
+</body></html>

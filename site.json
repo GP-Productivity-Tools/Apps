@@ -1,0 +1,8 @@
+{
+  "name": "GP Productivity Tools",
+  "headline": "Small tools that make busy days in general practice easier.",
+  "intro": "Free, simple web apps for practice teams, clinicians and volunteers. They run in your browser, no sign-up needed.",
+  "footer": "Built by Jack Evans.",
+  "disclaimer": "These tools are provided as-is to support, not replace, professional judgement and local policy. They don't collect or store your data unless an app says otherwise.",
+  "categoryOrder": ["Clinical", "Practice admin", "Volunteering", "Utilities"]
+}
